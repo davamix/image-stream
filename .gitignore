@@ -1,0 +1,6 @@
+__pycache__/
+
+# Model
+*.pth
+last_checkpoint
+
