@@ -8,51 +8,120 @@ import cv2
 import socket
 import struct
 import pickle
+import json
 
 from model import Model
 
 
-model = Model()
+class Server():
+    def __init__(self):
+        self.input_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.output_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        
+        self.data = b""
+        self.payload_size = struct.calcsize(">L")
 
-host = "0.0.0.0"
-port = 6666
+        self.configuration = self.load_configuration("config.json")
+        self.isOutputConnected = False
 
-s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-s.bind((host, port))
-print(f"Listening: {host}:{port}")
+        self.setup_input_connections()
+        self.setup_output_connections()
 
-s.listen(10)
-conn, addr = s.accept()
+    def load_configuration(self, file):
+        with open(file) as json_data:
+            return json.load(json_data)
 
-data = b""
-payload_size = struct.calcsize(">L")
+    '''
+    Configure and bind the input socket connection
+    '''
+    def setup_input_connections(self):
+        host = self.configuration["server"]["input"]["host"]
+        port = self.configuration["server"]["input"]["port"]
+        
+        self.input_socket.bind((host, port))
+        print(f"Listening: {host}: {port}")
 
-while True:
-    while len(data) < payload_size:
-        #print(f"Recv: {len(data)}")
-        data += conn.recv(4096)
+        self.input_socket.listen(10)
+    
+    '''
+    Configure the output socket connection
+    '''
+    def setup_output_connections(self):
+        host = self.configuration["server"]["output"]["host"]
+        port = self.configuration["server"]["output"]["port"]
 
-    #print(f"Done recv: {len(data)}")
+        try:
+            self.output_socket.connect((host, port))
+            self.isOutputConnected = True
+        except ConnectionRefusedError:
+            print(f"Cannot connect to: {host}: {port}")
 
-    packed_msg_size = data[:payload_size]
-    data = data[payload_size:]
-    msg_size = struct.unpack(">L", packed_msg_size)[0]
-    #print(f"msg_size: {msg_size}")
+    def connect(self):
+        conn, addr = self.input_socket.accept()
+        return conn, addr
 
-    while(len(data) < msg_size):
-        data += conn.recv(4096)
+    '''
+    Close the output socket connection
+    '''
+    def disconnect(self):
+        try:
+            h, p = self.output_socket.getpeername()
+            print(f"Closing connection to: {h}: {p}")
+        except:
+            print("The output connection was not available.")
+        finally:
+            self.output_socket.close()
+            self.isOutputConnected = False
 
-    frame_data = data[:msg_size]
-    data = data[msg_size:]
+    def receive_data(self, connection):
+        while len(self.data) < self.payload_size:
+            self.data += connection.recv(4096)
 
-    frame = pickle.loads(frame_data, fix_imports=True, encoding="bytes")
-    frame = cv2.imdecode(frame, cv2.IMREAD_COLOR)
+        packed_msg_size = self.data[:self.payload_size]
+        self.data = self.data[self.payload_size:]
+        msg_size = struct.unpack(">L", packed_msg_size)[0]
 
-    # cv2.imshow('Window', frame)
+        while(len(self.data) < msg_size):
+            self.data += connection.recv(4096)
 
-    # if cv2.waitKey(1) & 0xFF == ord('q'):
-    #     break
+        frame_data = self.data[:msg_size]
+        self.data = self.data[msg_size:]
 
-    model.detect(frame)
+        return frame_data
 
-cv2.destroyAllWindows()
+    def send_data(self, data):
+        print(f"Sending data: {data}")
+
+        data = pickle.dumps(data, 0)
+        size = len(data)
+
+        # TODO: Try to connect if the output socket is not connected
+        if self.isOutputConnected:
+            self.output_socket.sendall(struct.pack(">L", size) + data)
+
+
+def main():
+    print("## SERVER ##")
+    model = Model()
+
+    server = Server()
+    connection, _ = server.connect()
+
+    while True:
+        frame_data = server.receive_data(connection)
+
+        frame = pickle.loads(frame_data, fix_imports=True, encoding="bytes")
+        frame = cv2.imdecode(frame, cv2.IMREAD_COLOR)
+
+        classes, scores = model.detect(frame)
+
+        for c,s in zip(classes, scores):
+            #print(f"Class {model.classes[c]}, {s * 100:.2f}%")
+            msg = f"Class {model.classes[c]}, {s * 100:.2f}%"
+            server.send_data(msg)
+        
+        #server.send_data(zip(classes, scores))
+
+
+if __name__ == '__main__':
+    main()

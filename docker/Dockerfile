@@ -37,7 +37,7 @@ RUN pip install --user opencv-python
 ENV FVCORE_CACHE="/tmp"
 WORKDIR /home/appuser
 
-COPY server.py model.py model_final.pth last_checkpoint /home/appuser/
+COPY server.py config.json model.py model_final.pth last_checkpoint /home/appuser/
 
 ENTRYPOINT [ "python3", "/home/appuser/server.py" ]
 
