@@ -12,47 +12,61 @@ import pickle
 from model import Model
 
 
-model = Model()
+class Server():
+    def __init__(self):
+        self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.data = b""
+        self.payload_size = struct.calcsize(">L")
 
-host = "0.0.0.0"
-port = 6666
+    def connect(self, host, port):
+        self.sock.bind((host, port))
+        self.sock.listen(10)
+        conn, addr = self.sock.accept()
 
-s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-s.bind((host, port))
-print(f"Listening: {host}:{port}")
+        return conn, addr
 
-s.listen(10)
-conn, addr = s.accept()
+    def receive_data(self, connection):
+        while len(self.data) < self.payload_size:
+            self.data += connection.recv(4096)
 
-data = b""
-payload_size = struct.calcsize(">L")
+        packed_msg_size = self.data[:self.payload_size]
+        self.data = self.data[self.payload_size:]
+        msg_size = struct.unpack(">L", packed_msg_size)[0]
 
-while True:
-    while len(data) < payload_size:
-        #print(f"Recv: {len(data)}")
-        data += conn.recv(4096)
+        while(len(self.data) < msg_size):
+            self.data += connection.recv(4096)
 
-    #print(f"Done recv: {len(data)}")
+        frame_data = self.data[:msg_size]
+        self.data = self.data[msg_size:]
 
-    packed_msg_size = data[:payload_size]
-    data = data[payload_size:]
-    msg_size = struct.unpack(">L", packed_msg_size)[0]
-    #print(f"msg_size: {msg_size}")
+        return frame_data
 
-    while(len(data) < msg_size):
-        data += conn.recv(4096)
+    def send_data(self, data):
+        # TODO: Implement send predictions back to the client
+        print(f"Sending data... {data}")
 
-    frame_data = data[:msg_size]
-    data = data[msg_size:]
 
-    frame = pickle.loads(frame_data, fix_imports=True, encoding="bytes")
-    frame = cv2.imdecode(frame, cv2.IMREAD_COLOR)
+def main():
+    model = Model()
+    host = "0.0.0.0"
+    port = 6666
 
-    # cv2.imshow('Window', frame)
+    server = Server()
+    connection, _ = server.connect(host, port)
 
-    # if cv2.waitKey(1) & 0xFF == ord('q'):
-    #     break
+    while True:
+        frame_data = server.receive_data(connection)
 
-    model.detect(frame)
+        frame = pickle.loads(frame_data, fix_imports=True, encoding="bytes")
+        frame = cv2.imdecode(frame, cv2.IMREAD_COLOR)
 
-cv2.destroyAllWindows()
+        classes, scores = model.detect(frame)
+
+        for c,s in zip(classes, scores):
+            print(f"Class {model.classes[c]}, {s * 100:.2f}%")
+        
+        server.send_data(zip(classes, scores))
+
+
+if __name__ == '__main__':
+    main()

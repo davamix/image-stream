@@ -35,9 +35,11 @@ class Model():
         pred_classes = (outputs["instances"].pred_classes).detach()
         pred_scores = (outputs["instances"].scores).detach()
 
-        for c,s in zip(pred_classes, pred_scores):
-            print(f"Class {self.classes[c]}, {s * 100:.2f}%")
+        # for c,s in zip(pred_classes, pred_scores):
+        #     print(f"Class {self.classes[c]}, {s * 100:.2f}%")
 
         self.isPredicting = False
+
+        return pred_classes, pred_scores
 
     
