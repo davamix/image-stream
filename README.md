@@ -14,7 +14,7 @@ First build or run the container.
 docker-compose run --service-ports --volume=/home/davamix/Development/python/image-stream:/tmp:rw detectron2
 ```
 
-If the `Dockerfile` is changed, build with:
+If the `Dockerfile` has changed, build with:
 ```
 USER_ID=$UID docker-compose build detectron2
 ```
