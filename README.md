@@ -6,6 +6,12 @@ Testing how to send video images from a webcam to the server using sockets and t
 /---\       --------   socket   --------   predict  /-----\
 |CAM| >---< |Client| ---------> |Server| >--------< |Model|
 \---/       --------            --------            \-----/
+                                    |
+                                    |socket
+                                    v
+                                ---------
+                                |Monitor|
+                                ---------
 ```
 
 ## Server
