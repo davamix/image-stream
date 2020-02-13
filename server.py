@@ -122,6 +122,5 @@ def main():
         
         #server.send_data(zip(classes, scores))
 
-
 if __name__ == '__main__':
     main()
