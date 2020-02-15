@@ -9,6 +9,7 @@ import socket
 import struct
 import pickle
 import json
+import time
 
 from model import Model
 
@@ -90,7 +91,7 @@ class Server():
         return frame_data
 
     def send_data(self, data):
-        print(f"Sending data: {data}")
+        #print(f"Sending data: {data}")
 
         data = pickle.dumps(data, 0)
         size = len(data)
@@ -113,14 +114,21 @@ def main():
         frame = pickle.loads(frame_data, fix_imports=True, encoding="bytes")
         frame = cv2.imdecode(frame, cv2.IMREAD_COLOR)
 
-        classes, scores = model.detect(frame)
+        # classes, scores = model.detect(frame)
 
-        for c,s in zip(classes, scores):
-            #print(f"Class {model.classes[c]}, {s * 100:.2f}%")
-            msg = f"Class {model.classes[c]}, {s * 100:.2f}%"
-            server.send_data(msg)
+        # for c,s in zip(classes, scores):
+        #     #print(f"Class {model.classes[c]}, {s * 100:.2f}%")
+        #     msg = f"Class {model.classes[c]}, {s * 100:.2f}%"
+        #     server.send_data(msg)
         
         #server.send_data(zip(classes, scores))
+
+        detection_time = time.time()
+        
+        final_image = model.detect(frame)
+        print(f"Detection in {int(round((time.time() - detection_time) * 1000))} ms")
+        
+        server.send_data(final_image)
 
 if __name__ == '__main__':
     main()

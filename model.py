@@ -32,14 +32,24 @@ class Model():
 
         outputs = self.predictor(image)
 
-        pred_classes = (outputs["instances"].pred_classes).detach()
-        pred_scores = (outputs["instances"].scores).detach()
+        # pred_classes = (outputs["instances"].pred_classes).detach()
+        # pred_scores = (outputs["instances"].scores).detach()
 
         # for c,s in zip(pred_classes, pred_scores):
         #     print(f"Class {self.classes[c]}, {s * 100:.2f}%")
 
+        v = Visualizer(image[:, :, ::-1], 
+            metadata = MetadataCatalog.get("cats_val").set(
+                thing_classes=self.classes,
+                thing_colors=[(177, 205, 223), (223, 205, 177)]),
+            scale = 0.8,
+            instance_mode = ColorMode.IMAGE_BW
+        )
+        v = v.draw_instance_predictions(outputs["instances"].to("cpu"))
+
         self.isPredicting = False
 
-        return pred_classes, pred_scores
+        #return pred_classes, pred_scores
+        return v.get_image()[:, :, ::-1]
 
     

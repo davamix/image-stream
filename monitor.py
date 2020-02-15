@@ -56,10 +56,14 @@ def main():
         data = monitor.receive_data(connection)
 
         prediction = pickle.loads(data, fix_imports=True, encoding="bytes")
+        #print(prediction)
         
         # TODO: Decode prediction
-        print(prediction)
+        #print(prediction)
+        cv2.imshow('Prediction', prediction)
 
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
 
 if __name__ == "__main__":
     main()
