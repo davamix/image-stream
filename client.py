@@ -76,60 +76,10 @@ def main():
     if client.isConnected:
         while True:
             frame = client.capture()
-            cv2.imshow('Window',frame)
 
             client.get_prediction(frame)
 
-            if cv2.waitKey(1) & 0xFF == ord('q'):
-                break
-    
     client.disconnect()
 
 if __name__ == '__main__':
     main()
-
-# host = "127.0.0.1"
-# #host = "192.168.2.101"
-# port = 6666
-
-# s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-
-# try:
-#     s.connect((host, port))
-# except ConnectionRefusedError:
-#     print(f"Cannot connect to the server: {host}:{port}")
-#     sys.exit()
-
-# capture = cv2.VideoCapture(0)
-# capture.set(3, 320)
-# capture.set(4, 240)
-
-# encode_param = [int(cv2.IMWRITE_WEBP_QUALITY), 90]
-
-# if capture.isOpened():
-#     try:
-
-#         while True:
-#             _, frame = capture.read()
-
-#             encode, frame_enc = cv2.imencode('.jpg', frame, encode_param)
-
-#             data = pickle.dumps(frame_enc, 0)
-#             size = len(data)
-#             #print(print(f"length: {size}"))
-
-#             s.sendall(struct.pack(">L", size) + data)
-
-#             cv2.imshow('Window', frame)
-
-#             if cv2.waitKey(1) & 0xFF == ord('q'):
-#                 break
-    
-#     except BrokenPipeError:
-#         print("The connection with the server has been closed.")
-#     finally:
-#         capture.release()
-# else:
-#     print("Webcam cannot be opened")
-
-# s.close()

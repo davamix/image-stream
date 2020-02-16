@@ -90,10 +90,11 @@ class Server():
 
         return frame_data
 
-    def send_data(self, data):
+    def send_data(self, original_image, predicted_image):
         #print(f"Sending data: {data}")
 
-        data = pickle.dumps(data, 0)
+        # data = pickle.dumps(data, 0)
+        data = pickle.dumps((original_image, predicted_image))
         size = len(data)
 
         # TODO: Try to connect if the output socket is not connected
@@ -114,6 +115,8 @@ def main():
         frame = pickle.loads(frame_data, fix_imports=True, encoding="bytes")
         frame = cv2.imdecode(frame, cv2.IMREAD_COLOR)
 
+        if model.isPredicting: continue
+
         # classes, scores = model.detect(frame)
 
         # for c,s in zip(classes, scores):
@@ -128,7 +131,7 @@ def main():
         final_image = model.detect(frame)
         print(f"Detection in {int(round((time.time() - detection_time) * 1000))} ms")
         
-        server.send_data(final_image)
+        server.send_data(frame, final_image)
 
 if __name__ == '__main__':
     main()

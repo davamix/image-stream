@@ -5,13 +5,22 @@ Testing how to send video images from a webcam to the server using sockets and t
 ```
 /---\       --------   socket   --------   predict  /-----\
 |CAM| >---< |Client| ---------> |Server| >--------< |Model|
-\---/       --------            --------            \-----/
+\---/       --------   r_img    --------            \-----/
                                     |
-                                    |socket
+                              socket|(o_img, p_img)
                                     v
                                 ---------
                                 |Monitor|
                                 ---------
+                                    /\ show
+                                   /  \
+                                  /    \
+                              /-----\ /-----\
+                              |o_img| |p_img|
+                              \-----/ \-----/
+r_img --> raw image
+o_img --> original image
+p_img --> predicted image
 ```
 
 ## Startup sequence

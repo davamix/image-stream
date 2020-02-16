@@ -23,13 +23,6 @@ class Model():
         self.isPredicting = False
 
     def detect(self, image):
-        if self.isPredicting: return
-
-        #print("Predicting...")
-
-        # if not image:
-        #     return
-
         outputs = self.predictor(image)
 
         # pred_classes = (outputs["instances"].pred_classes).detach()
