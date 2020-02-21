@@ -10,6 +10,7 @@ import struct
 import pickle
 import json
 import time
+import time
 
 from model import Model
 
@@ -27,6 +28,11 @@ class Server():
 
         self.setup_input_connections()
         self.setup_output_connections()
+
+        # FPS
+        self.time_start = None
+        self.time_end = None
+        self.frames = 0
 
     def load_configuration(self, file):
         with open(file) as json_data:
@@ -109,6 +115,9 @@ def main():
     server = Server()
     connection, _ = server.connect()
 
+    start_time = time.time()
+    counter = 0
+
     while True:
         frame_data = server.receive_data(connection)
 
@@ -126,12 +135,19 @@ def main():
         
         #server.send_data(zip(classes, scores))
 
-        detection_time = time.time()
+        # detection_time = time.time()
         
         final_image = model.detect(frame)
-        print(f"Detection in {int(round((time.time() - detection_time) * 1000))} ms")
+        # print(f"Detection in {int(round((time.time() - detection_time) * 1000))} ms")
         
         server.send_data(frame, final_image)
+
+        counter+=1
+        # Display FPS every 1s
+        if (time.time() - start_time) > 1 :
+            print("FPS: ", counter / (time.time() - start_time))
+            counter = 0
+            start_time = time.time()
 
 if __name__ == '__main__':
     main()
